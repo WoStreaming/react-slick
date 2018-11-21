@@ -48,7 +48,7 @@ export const getSwipeDirection = (touchObject, verticalSwiping = false) => {
   xDist = touchObject.startX - touchObject.curX;
   yDist = touchObject.startY - touchObject.curY;
   r = Math.atan2(yDist, xDist);
-  swipeAngle = Math.round(r * 180 / Math.PI);
+  swipeAngle = Math.round((r * 180) / Math.PI);
   if (swipeAngle < 0) {
     swipeAngle = 360 - Math.abs(swipeAngle);
   }
@@ -195,7 +195,7 @@ export const slideHandler = spec => {
       finalSlide = animationSlide + slideCount;
       if (!infinite) finalSlide = 0;
       else if (slideCount % slidesToScroll !== 0)
-        finalSlide = slideCount - slideCount % slidesToScroll;
+        finalSlide = slideCount - (slideCount % slidesToScroll);
     } else if (!canGoNext(spec) && animationSlide > currentSlide) {
       animationSlide = finalSlide = currentSlide;
     } else if (centerMode && animationSlide >= slideCount) {
@@ -265,7 +265,8 @@ export const changeSlide = (spec, options) => {
     slideOffset = indexOffset === 0 ? slidesToScroll : indexOffset;
     targetSlide = currentSlide + slideOffset;
     if (lazyLoad && !infinite) {
-      targetSlide = (currentSlide + slidesToScroll) % slideCount + indexOffset;
+      targetSlide =
+        ((currentSlide + slidesToScroll) % slideCount) + indexOffset;
     }
   } else if (options.message === "dots") {
     // Click on dots
@@ -303,16 +304,18 @@ export const keyHandler = (e, accessibility, rtl) => {
   return "";
 };
 
-export const swipeStart = (e, swipe, draggable) => {
+export const swipeStart = (e, swipe, draggable, swapClientXY) => {
   e.target.tagName === "IMG" && e.preventDefault();
   if (!swipe || (!draggable && e.type.indexOf("mouse") !== -1)) return "";
+  const startX = e.touches ? e.touches[0].pageX : e.clientX;
+  const startY = e.touches ? e.touches[0].pageY : e.clientY;
   return {
     dragging: true,
     touchObject: {
-      startX: e.touches ? e.touches[0].pageX : e.clientX,
-      startY: e.touches ? e.touches[0].pageY : e.clientY,
-      curX: e.touches ? e.touches[0].pageX : e.clientX,
-      curY: e.touches ? e.touches[0].pageY : e.clientY
+      startX: swapClientXY ? startY : startX,
+      startY: swapClientXY ? startX : startY,
+      curX: swapClientXY ? startY : startX,
+      curY: swapClientXY ? startX : startY
     }
   };
 };
@@ -337,7 +340,8 @@ export const swipeMove = (e, spec) => {
     touchObject,
     swipeEvent,
     listHeight,
-    listWidth
+    listWidth,
+    swapClientXY
   } = spec;
   if (scrolling) return;
   if (animating) return e.preventDefault();
@@ -345,8 +349,10 @@ export const swipeMove = (e, spec) => {
   let swipeLeft,
     state = {};
   let curLeft = getTrackLeft(spec);
-  touchObject.curX = e.touches ? e.touches[0].pageX : e.clientX;
-  touchObject.curY = e.touches ? e.touches[0].pageY : e.clientY;
+  const curX = e.touches ? e.touches[0].pageX : e.clientX;
+  const curY = e.touches ? e.touches[0].pageY : e.clientY;
+  touchObject.curX = swapClientXY ? curY : curX;
+  touchObject.curY = swapClientXY ? curX : curY;
   touchObject.swipeLength = Math.round(
     Math.sqrt(Math.pow(touchObject.curX - touchObject.startX, 2))
   );
@@ -704,7 +710,7 @@ export const getTrackLeft = spec => {
       slideCount % slidesToScroll !== 0 &&
       slideIndex + slidesToScroll > slideCount
     ) {
-      slidesToOffset = slidesToShow - slideCount % slidesToScroll;
+      slidesToOffset = slidesToShow - (slideCount % slidesToScroll);
     }
     if (centerMode) {
       slidesToOffset = parseInt(slidesToShow / 2);
