@@ -8,7 +8,7 @@ var WebpackDevServer = require("webpack-dev-server");
 var assign = require("object-assign");
 var opn = require("opn");
 
-const DEV_PORT = 2018;
+const DEV_PORT = 8080;
 
 gulp.task("clean", function() {
   return del(["./build/*"]);
